@@ -35,7 +35,7 @@ def get_collision_rects(tmx_data, layer_index):
     print(f"--- Поиск коллизий на слое с индексом {layer_index} ---")
     if len(tmx_data.layers) > layer_index:
         collision_layer = tmx_data.layers[layer_index]
-        layer_name = getattr(collision_layer, 'name', f'Слой {layer_index}') # Получаем имя слоя, если есть
+        layer_name = getattr(collision_layer, 'name', f'Слой {layer_index}')
 
         if isinstance(collision_layer, pytmx.TiledTileLayer):
             tile_width = tmx_data.tilewidth
@@ -75,3 +75,12 @@ def get_kill_zones(tmx_data):
                 if obj.properties.get('kill'):
                     kill_zones.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
     return kill_zones
+
+def get_portal(tmx_data):
+    portal = []
+    for layer in tmx_data.layers:
+        if layer.name == 'Objects':
+            for obj in layer:
+                if obj.properties.get('portal'):
+                    portal.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+    return portal

@@ -37,6 +37,10 @@ class Enemy(Entity):
         self.walls = wall_rects
         self.player = player
 
+        self.is_hurting = False
+        self.hurt_start_time = 0
+        self.hurt_duration = 300
+
         script_dir = os.path.dirname(os.path.abspath(__file__))
         self.animation_base_folder = os.path.abspath(os.path.join(script_dir, '..', '..', 'assets', 'images', 'characters', 'Golem', 'Golem_1', 'PNG', 'PNG_Sequences'))
         print(f"DEBUG [Enemy]: Базовая папка анимаций: {self.animation_base_folder}")
@@ -113,14 +117,23 @@ class Enemy(Entity):
 
     def update(self, dt):
         now = pygame.time.get_ticks()
-        distance_to_player = self.position.distance_to(self.player.position)
         self.velocity_y += self.gravity
-        new_state = self.state
-
         if self.velocity_y > self.max_fall_speed:
              self.velocity_y = self.max_fall_speed
+
         intended_dx = 0
+
+        if self.is_hurting:
+            if now - self.hurt_start_time > self.hurt_duration:
+                self.is_hurting = False
+            else:
+                self.move(intended_dx, self.velocity_y)
+                self.animate()
+                return
+        distance_to_player = self.position.distance_to(self.player.position)
         new_state = self.state
+
+
         if self.state == 'idle':
             if distance_to_player <= self.detection_radius:
                 new_state = 'chasing'
@@ -142,6 +155,7 @@ class Enemy(Entity):
             else:
                 self.attack_player(now)
                 intended_dx = 0
+                self.set_animation('slashing')
 
         if new_state != self.state:
              print(f"Враг {id(self)} перешел в состояние: {new_state}")
@@ -149,7 +163,9 @@ class Enemy(Entity):
              if self.state == 'idle':
                  self.set_animation('idle')
              elif self.state == 'chasing':
-                  self.set_animation('walking')
+                 self.set_animation('walking')
+             elif self.state == 'attacking':
+                 self.set_animation('slashing')
         self.move(intended_dx, self.velocity_y)
 
         if self.state != 'attacking':
@@ -227,9 +243,9 @@ class Enemy(Entity):
          self.current_hp -= amount
          print(f"Враг {id(self)} получил {amount} урона. Осталось HP: {self.current_hp}")
          if self.current_hp <= 0:
-             self.kill() # Удаляем спрайт из всех групп (стандартный метод Sprite)
+             self.kill()
              print(f"Враг {id(self)} уничтожен.")
          else:
-             # Можно добавить состояние 'hurt' и соответствующую анимацию
              self.set_animation('hurt')
-             # Можно добавить короткий стан или отбрасывание
+             self.is_hurting = True
+             self.hurt_start_time = pygame.time.get_ticks()
